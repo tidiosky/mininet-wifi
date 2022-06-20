@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """
 MiniEdit: a simple network editor for Mininet
@@ -588,9 +588,9 @@ class PrefsDialog(simpledialog.Dialog):
         if m is None:
             warn( 'Version check failed' )
             return None
-
-        info( 'Open vSwitch version is '+m.group(1), '\n' )
-        return m.group(1)
+        else:
+            info( 'Open vSwitch version is '+m.group(1), '\n' )
+            return m.group(1)
 
 
 class CustomDialog(object):
@@ -2353,7 +2353,8 @@ class MiniEdit(Frame):
             if Python3:
                 return text
             return text.encode('utf-8')
-        return text
+        else:
+            return text
 
     def loadTopology( self ):
         "Load command."
@@ -3476,7 +3477,8 @@ class MiniEdit(Frame):
         items = self.canvas.find_overlapping( x, y, x, y )
         if len( items ) == 0:
             return None
-        return items[ 0 ]
+        else:
+            return items[ 0 ]
 
     # Canvas bindings for Select, Host, Switch and Link tools
 
@@ -5031,7 +5033,7 @@ class MiniEdit(Frame):
         # We don't accept extra arguments after the options
         if self.args:
             opts.print_help()
-            sys.exit()
+            exit()
 
     def setCustom( self, name, value ):
         "Set custom parameters for MininetRunner."
@@ -5049,13 +5051,12 @@ class MiniEdit(Frame):
     def parseCustomFile( self, fileName ):
         "Parse custom file and add params before parsing cmd-line options."
         customs = {}
-        if os.path.isfile(fileName):
-            with open(fileName, 'r') as f:
-                exec(f.read())  # pylint: disable=exec-used
+        if os.path.isfile( fileName ):
+            execfile( fileName, customs, customs )
             for name, val in customs.items():
-                self.setCustom(name, val)
+                self.setCustom( name, val )
         else:
-            raise Exception('could not find custom file: %s' % fileName)
+            raise Exception( 'could not find custom file: %s' % fileName )
 
     def importTopo( self ):
         info( 'topo='+self.options.topo, '\n' )

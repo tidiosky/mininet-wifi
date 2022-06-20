@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """This example shows how to enable 4-address
 Warning: It works only when network manager is stopped"""

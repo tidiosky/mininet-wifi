@@ -11,16 +11,14 @@ import subprocess
 from time import sleep
 from subprocess import check_output as co, CalledProcessError
 
+from mn_wifi.devices import DeviceRate
 from mininet.link import Intf, TCIntf, Link
 from mininet.log import error, debug, info
-
-from mn_wifi.devices import DeviceRate
 from mn_wifi.manetRoutingProtocols import manetProtocols
 from mn_wifi.propagationModels import SetSignalRange, GetPowerGivenRange
 from mn_wifi.wmediumdConnector import DynamicIntfRef, \
     WStarter, SNRLink, w_pos, w_cst, w_server, ERRPROBLink, \
-    wmediumd_mode, w_txpower, w_gain, w_height, w_medium
-from mn_wifi.frequency import Frequency as Getfreq
+    wmediumd_mode, w_txpower, w_gain, w_height
 
 
 class IntfWireless(Intf):
@@ -28,7 +26,6 @@ class IntfWireless(Intf):
 
     dist = 0
     noise = 0
-    medium_id = 0
     eqLoss = '(dist * 2) / 1000'
     eqDelay = '(dist / 10) + 1'
     eqLatency = '(dist / 10)/2'
@@ -194,10 +191,6 @@ class IntfWireless(Intf):
         w_server.send_snr_update(SNRLink(self.wmIface, ap_intf.wmIface, snr))
         w_server.send_snr_update(SNRLink(ap_intf.wmIface, self.wmIface, snr))
 
-    def setMediumIdWmediumd(self, medium_id):
-        "Sends MediumId to wmediumd"
-        w_server.update_medium(w_medium(self.wmIface, int(medium_id)))
-
     def sendIntfTowmediumd(self):
         "Dynamically sending nodes to wmediumd"
         self.wmIface = DynamicIntfRef(self.node, intf=self.name)
@@ -205,13 +198,13 @@ class IntfWireless(Intf):
         w_server.register_interface(self.mac)
 
     def getCustomRate(self):
-        mode_rate = {'a': 11, 'b': 3, 'g': 11, 'n': 600, 'n2': 600,
-                     'ac': 1000, 'ax2': 500, 'ax5': 700, 'ax': 1000, 'ad': 1000}
+        mode_rate = {'a': 11, 'b': 3, 'g': 11, 'n': 600, 'n5': 600,
+                     'ac': 1000, 'ax': 2000, 'ad': 1000}
         return mode_rate.get(self.mode)
 
     def getRate(self):
-        mode_rate = {'a': 54, 'b': 11, 'g': 54, 'n': 300, 'n2': 300,
-                     'ac': 600, 'ax2': 500, 'ax5': 700, 'ax': 1000, 'ad': 1000}
+        mode_rate = {'a': 54, 'b': 11, 'g': 54, 'n': 300, 'n5': 300,
+                     'ac': 600, 'ax': 1200, 'ad': 4600}
         return mode_rate.get(self.mode)
 
     def rec_rssi(self):
@@ -223,6 +216,50 @@ class IntfWireless(Intf):
     def get_rssi(self, ap_intf, dist):
         from mn_wifi.propagationModels import PropagationModel as ppm
         return float(ppm(self, ap_intf, dist).rssi)
+
+    def get_freq(self, channel):
+        "Gets frequency based on channel number"
+        chan_list_1ghz = [4]
+        chan_list_2ghz = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        chan_list_5ghz = [36, 40, 44, 48, 52, 56, 60, 64, 100,
+                          104, 108, 112, 116, 120, 124, 128, 132,
+                          136, 140, 149, 153, 157, 161, 165,
+                          169, 171, 172, 173, 174, 175, 176,
+                          177, 178, 179, 180, 181, 182, 183, 184,
+                          185]
+        chan_list_6ghz = [1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41,
+                          45, 49, 53, 57, 61, 65, 69, 73, 77, 81,
+                          85, 89, 93, 97, 101, 105, 109, 113, 117,
+                          121, 125, 129, 133, 137, 141, 145, 149,
+                          153, 157, 161, 165, 169, 173, 177, 181,
+                          185, 189, 193, 197, 201, 205, 209, 213,
+                          217, 221, 225, 229, 233]
+        chan_list_60ghz = [1, 2, 3, 4]
+
+        freq_list_1ghz = [906500]
+        freq_list_2ghz = [2.412, 2.417, 2.422, 2.427, 2.432, 2.437,
+                          2.442, 2.447, 2.452, 2.457, 2.462]
+        freq_list_5ghz = [5.18, 5.2, 5.22, 5.24, 5.26, 5.28, 5.30, 5.32,
+                          5.50, 5.52, 5.54, 5.56, 5.58, 5.6, 5.62,
+                          5.64, 5.66, 5.68, 5.7, 5.745, 5.765, 5.785,
+                          5.805, 5.825, 5.845, 5.855, 5.86, 5.865, 5.87,
+                          5.875, 5.88, 5.885, 5.89, 5.895, 5.9, 5.905,
+                          5.91, 5.915, 5.92, 5.925]
+        freq_list_6ghz = [5.955, 5.975, 5.995, 6.015, 6.035, 6.055, 6.095,
+                          6.115, 6.135, 6.155, 6.175, 6.195, 6.215, 6.235,
+                          6.255, 6.275, 6.295, 6.315, 6.335, 6.375, 6.415,
+                          6.435, 6.455, 6.475, 6.495, 6.515, 6.535, 6.555,
+                          6.575, 6.595, 6.615, 6.635, 6.655, 6.675, 6.695,
+                          6.715, 6.735, 6.755, 6.775, 6.795, 6.815, 6.835,
+                          6.855, 6.875, 6.895, 6.915, 6.935, 6.955, 6.975,
+                          6.995, 7.015, 7.035, 7.055, 7.075, 7.095, 7.115]
+        freq_list_60ghz = [58.320, 60.480, 62.640, 64.800]
+        all_chan = chan_list_1ghz + chan_list_2ghz + chan_list_5ghz + chan_list_6ghz + chan_list_60ghz
+        all_freq = freq_list_1ghz + freq_list_2ghz + freq_list_5ghz + freq_list_6ghz + freq_list_60ghz
+        if int(channel) in all_chan:
+            idx = all_chan.index(int(channel))
+            return all_freq[idx]
+        return 2.412
 
     def setFreq(self, freq, intf=None):
         return self.iwdev_cmd('{} set freq {}'.format(intf, freq))
@@ -247,12 +284,12 @@ class IntfWireless(Intf):
         self.name = args[0]
 
     def setAPChannel(self, channel):
-        self.freq = Getfreq(self.mode, channel).freq
+        self.freq = self.get_freq(channel)
         self.pexec('hostapd_cli -i {} chan_switch {} {}'.format(
             self.name, channel, str(self.format_freq())))
 
     def setMeshChannel(self, channel):
-        self.freq = Getfreq(self.mode, channel).freq
+        self.freq = self.get_freq(channel)
         self.iwdev_cmd('{} set channel {}'.format(self.name, channel))
 
     def setChannel(self, channel):
@@ -272,20 +309,20 @@ class IntfWireless(Intf):
         if self.name not in self.node.params['wlan']:
             self.cmd('ip addr flush ', self.name)
             return self.cmd('ip addr add', args[0], 'brd + dev', self.name)
-
-        if len(args) == 0:
-            return self.cmd('ip addr show', self.name)
-
-        if ':' not in args[0]:
-            self.cmd('ip addr flush ', self.name)
-            cmd = 'ip addr add {} brd + dev {}'.format(args[0], self.name)
-            if self.ip6:
-                cmd += ' && ip -6 addr add {} dev {}'.format \
-                    (self.ip6, self.name)
-            return self.cmd(cmd)
-
-        self.cmd('ip -6 addr flush ', self.name)
-        return self.cmd('ip -6 addr add', args[0], 'dev', self.name)
+        else:
+            if len(args) == 0:
+                return self.cmd('ip addr show', self.name)
+            else:
+                if ':' not in args[0]:
+                    self.cmd('ip addr flush ', self.name)
+                    cmd = 'ip addr add {} brd + dev {}'.format(args[0], self.name)
+                    if self.ip6:
+                        cmd += ' && ip -6 addr add {} dev {}'.format \
+                            (self.ip6, self.name)
+                    return self.cmd(cmd)
+                else:
+                    self.cmd('ip -6 addr flush ', self.name)
+                    return self.cmd('ip -6 addr add', args[0], 'dev', self.name)
 
     def ipLink(self, *args):
         "Configure ourselves using ip link"
@@ -335,6 +372,7 @@ class IntfWireless(Intf):
     def setTxPower(self, txpower):
         self.txpower = int(txpower)
         self.iwdev_cmd('{} set txpower fixed {}'.format(self.name, self.txpower * 100))
+        debug('\n')
         self.setDefaultRange()
         self.setTXPowerWmediumd()
         self.node.configLinks()
@@ -383,12 +421,12 @@ class IntfWireless(Intf):
         if '/' in ipstr:
             self.ip, self.prefixLen = ipstr.split('/')
             return self.ipAddr(ipstr)
-
-        if prefixLen is None:
-            raise Exception('No prefix length set for IP address {}'.format
-                            (ipstr, ))
-        self.ip, self.prefixLen = ipstr, prefixLen
-        return self.ipAddr('{}/{}'.format(ipstr, prefixLen))
+        else:
+            if prefixLen is None:
+                raise Exception('No prefix length set for IP address {}'.format
+                                (ipstr, ))
+            self.ip, self.prefixLen = ipstr, prefixLen
+            return self.ipAddr('{}/{}'.format(ipstr, prefixLen))
 
     def setIP6(self, ipstr, prefixLen6=None, **args):
         """Set our IP6 address"""
@@ -397,17 +435,12 @@ class IntfWireless(Intf):
         if '/' in ipstr:
             self.ip6, self.prefixLen6 = ipstr.split('/')
             return self.ipAddr(ipstr)
-
-        if prefixLen6 is None:
-            raise Exception('No prefix length set for IP address {}'.format
-                            (ipstr, ))
-        self.ip6, self.prefixLen6 = ipstr, prefixLen6
-        return self.ipAddr('{}/{}'.format(ipstr, prefixLen6))
-
-    def setMediumId(self, medium_id):
-        """Set medium id to create isolated interface groups"""
-        self.medium_id = int(medium_id)
-        self.setMediumIdWmediumd(medium_id)
+        else:
+            if prefixLen6 is None:
+                raise Exception('No prefix length set for IP address {}'.format
+                                (ipstr, ))
+            self.ip6, self.prefixLen6 = ipstr, prefixLen6
+            return self.ipAddr('{}/{}'.format(ipstr, prefixLen6))
 
     def check_if_wpafile_exist(self):
         file = '{}_{}.staconf'.format(self.name, self.id)
@@ -440,6 +473,7 @@ class IntfWireless(Intf):
                         cmd += "   " + conf + "\n"
             else:
                 cmd += '   ssid=\"{}\"\n'.format(ap_intf.ssid)
+
                 if not ap_intf.authmode:
                     cmd += '   psk=\"{}\"\n'.format(passwd)
                     encrypt = ap_intf.encrypt
@@ -471,7 +505,7 @@ class IntfWireless(Intf):
             cmd += '}'
 
         pattern = '{}_{}.staconf'.format(self.name, self.id)
-        self.cmd('echo \'{}\' > {}'.format(cmd, pattern))
+        sh('echo \'{}\' > {}'.format(cmd, pattern))
 
     def wpa(self, ap_intf):
         self.wpaFile(ap_intf)
@@ -736,12 +770,7 @@ class HostapdConfig(IntfWireless):
             if 'phywlan' in intf.node.params: intf.node.params.pop('phywlan', None)
 
             intf.set_tc_ap()
-            intf.freq = Getfreq(intf.mode, intf.channel).freq
-            if not intf.freq:
-                info("Frequency is null for {}\n".format(intf))
-                info("Please make sure that mode ({}) supports "
-                     "channel {}\n".format(intf.mode, intf.channel))
-                exit()
+            intf.freq = intf.get_freq(intf.channel)
 
     def setConfig(self, intf):
         """Configure AP
@@ -771,16 +800,13 @@ class HostapdConfig(IntfWireless):
         if intf.mode == 'ax':
             intf.country_code = 'DE'
         if 'n' in intf.mode:
-            cmd += "\nhw_mode=g" if intf.mode == 'n2' else "\nhw_mode=a"
+            cmd += "\nhw_mode=a" if intf.mode == 'n5' else "\nhw_mode=g"
         elif intf.mode == 'a':
             cmd += "\ncountry_code={}".format(intf.country_code)
             cmd += "\nhw_mode={}".format(intf.mode)
-        elif intf.mode == 'ac' or 'ax' in intf.mode:
+        elif intf.mode == 'ac' or intf.mode == 'ax':
             cmd += "\ncountry_code={}".format(intf.country_code)
-            if intf.mode == 'ax2':
-                cmd += "\nhw_mode=g"
-            else:
-                cmd += "\nhw_mode=a"
+            cmd += "\nhw_mode=a"
         else:
             cmd += "\nhw_mode={}".format(intf.mode)
         return cmd
@@ -873,16 +899,13 @@ class HostapdConfig(IntfWireless):
                     cmd += '\nwps_pin_requests=/var/run/hostapd.pin-req'
                     cmd += '\nap_setup_locked=0'
 
-                if intf.mode == 'ac' or 'ax' in intf.mode or 'n' in intf.mode:
+                if intf.mode == 'ac' or intf.mode == 'ax' or 'n' in intf.mode:
                     cmd += '\nwmm_enabled=1'
-                    if intf.mode != 'ax2':
-                        cmd += '\nieee80211n=1'
-                    if intf.mode == 'ac':
-                        cmd += '\nieee80211ac=1'
-                    if 'ax' in intf.mode:
+                    cmd += '\nieee80211n=1'
+                    if intf.mode == 'ac': cmd += '\nieee80211ac=1'
+                    if intf.mode == 'ax':
                         cmd += '\nieee80211ax=1'
-                        if intf.ieee80211w:
-                            cmd += '\nop_class=131'
+                        cmd += '\nop_class=131'
 
                 if intf.ieee80211r:
                     if intf.mobility_domain:
@@ -1239,7 +1262,7 @@ class WirelessIntf(object):
 
     def status(self):
         "Return link status as a string"
-        return "(use iw/iwconfig to check connectivity)"
+        return "(use iw/iwconfig to check connectivity)".format(self.intf1.status(), self.intf2)
 
     def __str__(self):
         return '{}<->{}'.format(self.intf1, self.intf2)
@@ -1478,14 +1501,12 @@ class wmediumd(object):
         self.configWmediumd(**kwargs)
 
     def configWmediumd(self, wlinks, fading_cof, noise_th, stations,
-                       aps, cars, ppm, mediums):
+                       aps, cars, ppm):
         "Configure wmediumd"
         intfrefs = []
         isnodeaps = []
-        intfs = {}
-        intf_ids = {}
+
         nodes = stations + aps + cars
-        intf_id = 0
         for node in nodes:
             node.wmIfaces = []
 
@@ -1508,9 +1529,7 @@ class wmediumd(object):
                     intf.wmIface = DynamicIntfRef(node, intf=intf.name)
                     intfrefs.append(intf.wmIface)
                     node.wmIfaces.append(intf.wmIface)
-                    intfs[intf.name] = intf
-                    intf_ids[intf.name] = intf_id
-                    intf_id += 1
+
                     if isinstance(intf, master) or \
                             (node in aps and (not isinstance(intf, (managed, adhoc)))):
                         isnodeaps.append(1)
@@ -1526,24 +1545,9 @@ class wmediumd(object):
             self.error_prob(wlinks)
         else:
             self.snr(wlinks, noise_th)
-        mediums_id_list = []
-        for medium_index, medium_elements in enumerate(mediums):
-            medium_id = medium_index + 1  # Default one is 0
-            medium_intf_ids = []
-            for node in medium_elements:
-                if isinstance(node, str):
-                    # Node is a interface
-                    medium_intf_ids.append(intf_ids[node])
-                    intfs[node].medium_id = medium_id
-                else:
-                    # Node is station or AP
-                    for interface in node.wintfs.values():
-                        medium_intf_ids.append(intf_ids[interface.name])
-                        interface.medium_id = medium_id
-            mediums_id_list.append(medium_intf_ids)
         WStarter(intfrefs=intfrefs, links=self.links, pos=self.positions,
                  fading_cof=fading_cof, noise_th=noise_th, txpowers=self.txpowers,
-                 isnodeaps=isnodeaps, ppm=ppm, mediums=mediums_id_list)
+                 isnodeaps=isnodeaps, ppm=ppm)
 
     @staticmethod
     def get_position(pos=None):
@@ -1639,7 +1643,6 @@ class ITSLink(LinkAttrs):
 
         self.node = node
         self.name = intf.name
-        self.mode = 'a'
         self.mac = intf.mac
         self.associatedTo = 'ITS'
 
@@ -1649,7 +1652,7 @@ class ITSLink(LinkAttrs):
         for k, v in kwargs.items():
             setattr(self, k, params.get(k, v))
 
-        self.freq = Getfreq(self.mode, self.channel).freq
+        self.freq = self.get_freq(self.channel)
 
         if isinstance(intf, master):
             self.name = '{}-ocb'.format(node.name)
@@ -1818,7 +1821,7 @@ class adhoc(LinkAttrs):
 
         node.addWAttr(self, port=wlan)
 
-        self.freq = Getfreq(self.mode, self.channel).freq
+        self.freq = self.get_freq(self.channel)
         self.setReg()
         self.configureAdhoc()
 

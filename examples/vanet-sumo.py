@@ -1,14 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
-"""Sample file for VANET
+"""Sample file for SUMO
 
 ***Requirements***:
+
 Kernel version: 5.8+ (due to the 802.11p support)
 sumo 1.5.0 or higher
-sumo-gui
-
-Please consider reading https://mininet-wifi.github.io/80211p/ for 802.11p support
-"""
+sumo-gui"""
 
 from mininet.log import setLogLevel, info
 from mn_wifi.cli import CLI
@@ -62,7 +60,7 @@ def topology():
     # We may have to change it from 0 to 1 if we want to
     # load/reload the current simulation from a 2nd client
     net.useExternalProgram(program=sumo, port=8813,
-                           #config_file='map.sumocfg', # optional
+                           config_file='map.sumocfg',
                            extra_params=["--start --delay 1000"],
                            clients=1, exec_order=0)
 

@@ -176,8 +176,9 @@ class Mobility(object):
                 intf.associate_infra(ap_intf)
                 intf.associatedTo = 'bgscan' if intf.bgscan_module else 'active_scan'
             return 0
-
-        return self.check_in_range(intf, ap_intf)
+        else:
+            ack = self.check_in_range(intf, ap_intf)
+            return ack
 
     def config_links(self, nodes):
         for node in nodes:
@@ -372,7 +373,7 @@ class Tracked(Mobility):
             if hasattr(PlotGraph, 'plot3d'):
                 dim = 'update_3d'
 
-        coordinate = {}
+        coordinate = dict()
         for node in nodes:
             if hasattr(node, 'coord'):
                 coordinate[node] = self.set_coordinates(node)
@@ -392,7 +393,7 @@ class Tracked(Mobility):
                         node.params['initPos'] = fin_pos
 
             if not coordinate:
-                coordinate = {}
+                coordinate = dict()
                 for node in mob_nodes:
                     self.calculate_diff_time(node)
                     coordinate[node] = self.create_coord(node, tracked=True)
@@ -449,7 +450,8 @@ class Tracked(Mobility):
     def dir(self, p1, p2):
         if p1 > p2:
             return False
-        return True
+        else:
+            return True
 
     def mob_time(self, node):
         t1 = node.startTime
@@ -615,23 +617,23 @@ def init_random_waypoint(nr_nodes, dimensions, min_v, max_v,
                 y1 = rand() * max_y[i]
                 y2 = rand() * max_y[i]
                 break
+            else:
+                # M_0
+                x1 = rand() * max_x[i]
+                x2 = rand() * max_x[i]
+                # M_1
+                y1 = rand() * max_y[i]
+                y2 = rand() * max_y[i]
 
-            # M_0
-            x1 = rand() * max_x[i]
-            x2 = rand() * max_x[i]
-            # M_1
-            y1 = rand() * max_y[i]
-            y2 = rand() * max_y[i]
-
-            # r is a ratio of the length of the randomly chosen path over
-            # the length of a diagonal across the simulation area
-            r = np.sqrt(((x2 - x1) * (x2 - x1) +
-                         (y2 - y1) * (y2 - y1)) / \
-                        (max_x[i] * max_x[i] +
-                         max_y[i] * max_y[i]))
-            if rand() < r:
-                moving[i] = 1.
-                break
+                # r is a ratio of the length of the randomly chosen path over
+                # the length of a diagonal across the simulation area
+                r = np.sqrt(((x2 - x1) * (x2 - x1) +
+                             (y2 - y1) * (y2 - y1)) / \
+                            (max_x[i] * max_x[i] +
+                             max_y[i] * max_y[i]))
+                if rand() < r:
+                    moving[i] = 1.
+                    break
 
         x[i] = x1
         y[i] = y1
@@ -1594,7 +1596,7 @@ def coherence_ref_point(nodes, n_groups, dimensions, pointlist, velocity=(0.1, 1
     G_VEL = g_velocity
 
     FL_DISTR = lambda SAMPLES: U(0, FL_MAX, SAMPLES)
-    #VEL_DISTR = lambda FD: U(MIN_V, MAX_V, FD)
+    VEL_DISTR = lambda FD: U(MIN_V, MAX_V, FD)
     MAX_X, MAX_Y = dimensions
 
     if len(pointlist) > 1:

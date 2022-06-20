@@ -101,7 +101,8 @@ class Topo(MN_TOPO):
         "Return nodes in graph"
         if sort:
             return self.sorted( self.g.nodes() )
-        return self.g.nodes()
+        else:
+            return self.g.nodes()
 
     def aps( self, sort=True ):
         """Return aps.

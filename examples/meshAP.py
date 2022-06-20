@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """
 This example shows on how to create wireless link between two APs with mesh

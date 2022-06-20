@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'Setting position of the nodes and enable sockets'
 

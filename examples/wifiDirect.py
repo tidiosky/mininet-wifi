@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'Example for WiFi Direct'
 
@@ -14,7 +14,8 @@ from mn_wifi.wmediumdConnector import interference
 
 def topology(args):
     "Create a network."
-    net = Mininet_wifi(link=wmediumd, wmediumd_mode=interference,
+    net = Mininet_wifi(link=wmediumd,
+                       wmediumd_mode=interference,
                        configWiFiDirect=True)
 
     info("*** Creating nodes\n")

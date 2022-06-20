@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/python
 
 """Before running this script please stop network-manager:
 service network-manager stop

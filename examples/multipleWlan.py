@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'This example shows how to create multiple interfaces in stations'
 

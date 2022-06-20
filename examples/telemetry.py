@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'This uses telemetry() to enable a graph with live statistics'
 

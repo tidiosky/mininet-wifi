@@ -3,6 +3,8 @@
     author: Ramon Fontes (ramonrf@dca.fee.unicamp.br)
 """
 
+import matplotlib
+
 import numpy as np
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
@@ -173,7 +175,7 @@ class Plot2D (object):
         color = node.get_circle_color()
         node.circle = Plot2D.ax.add_patch(
             patches.Circle((0, 0), node.get_max_radius(),
-                           fill=True, alpha=0.1, color=color))
+                           fill=True, alpha=0.1, color='b'))
 
     @classmethod
     def instantiate_node(cls, node):

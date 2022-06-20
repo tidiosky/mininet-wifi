@@ -3,47 +3,46 @@
     author: Ramon Fontes (ramonrf@dca.fee.unicamp.br)
 """
 
-import re
 import socket
-
-from itertools import chain, groupby
+import re
 from threading import Thread as thread
 from time import sleep
-from sys import exit
-
-from mininet.cli import CLI
-from mininet.link import Link, TCLink, TCULink
-from mininet.log import info, error, debug, output, warn
-from mininet.net import Mininet
-from mininet.node import Node
-from mininet.nodelib import NAT
-from mininet.term import makeTerms
-from mininet.util import (macColonHex, ipStr, ipParse, ipAdd,
-                          waitListening, BaseString)
+from itertools import chain, groupby
 from six import string_types
 
-from mn_wifi.clean import Cleanup as CleanupWifi
-from mn_wifi.energy import Energy
+from mininet.cli import CLI
+from mininet.term import makeTerms
+from mininet.net import Mininet
+from mininet.node import Node, Controller
+from mininet.util import (macColonHex, ipStr, ipParse, ipAdd,
+                          waitListening, BaseString)
+from mininet.link import Link, TCLink, TCULink
+from mininet.nodelib import NAT
+from mininet.log import info, error, debug, output, warn
+
+from mn_wifi.node import AP, Station, Car, \
+    OVSKernelAP, physicalAP
+from mn_wifi.wmediumdConnector import error_prob, snr, interference
 from mn_wifi.link import IntfWireless, wmediumd, _4address, HostapdConfig, \
     WirelessLink, TCLinkWireless, ITSLink, WifiDirectLink, adhoc, mesh, \
     master, managed, physicalMesh, PhysicalWifiDirectLink, _4addrClient, \
     _4addrAP, phyAP
+from mn_wifi.clean import Cleanup as CleanupWifi
+from mn_wifi.energy import Energy
+from mn_wifi.telemetry import parseData, telemetry as run_telemetry
 from mn_wifi.mobility import Tracked as TrackedMob, model as MobModel, \
     Mobility as mob, ConfigMobility, ConfigMobLinks
-from mn_wifi.module import Mac80211Hwsim
-from mn_wifi.node import AP, Station, Car, OVSKernelAP, physicalAP
 from mn_wifi.plot import Plot2D, Plot3D, PlotGraph
+from mn_wifi.module import Mac80211Hwsim
 from mn_wifi.propagationModels import PropagationModel as ppm
-from mn_wifi.sixLoWPAN.link import LowPANLink
+from mn_wifi.vanet import vanet
 from mn_wifi.sixLoWPAN.net import Mininet_IoT
 from mn_wifi.sixLoWPAN.node import OVSSensor, LowPANNode
+from mn_wifi.sixLoWPAN.link import LowPANLink
 from mn_wifi.sixLoWPAN.util import ipAdd6
-from mn_wifi.telemetry import parseData, telemetry as run_telemetry
-from mn_wifi.vanet import vanet
-from mn_wifi.wmediumdConnector import error_prob, snr, interference
-from mn_wifi.wwan.link import WWANLink
 from mn_wifi.wwan.net import Mininet_WWAN
 from mn_wifi.wwan.node import WWANNode
+from mn_wifi.wwan.link import WWANLink
 
 VERSION = "2.6"
 
@@ -51,9 +50,9 @@ VERSION = "2.6"
 class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
 
     def __init__(self, accessPoint=OVSKernelAP, station=Station, car=Car,
-                 sensor=LowPANNode, apsensor=OVSSensor, modem=WWANNode, link=WirelessLink,
-                 ssid="new-ssid", mode="g", encrypt="", passwd=None, ieee80211w=None,
-                 channel=1, freq=2.4, band=20, wmediumd_mode=snr, roads=0, fading_cof=0,
+                 sensor=LowPANNode, apsensor=OVSSensor, modem=WWANNode,
+                 link=WirelessLink, ssid="new-ssid", mode="g", channel=1,
+                 freq=2.4, band=20, wmediumd_mode=snr, roads=0, fading_cof=0,
                  autoAssociation=True, allAutoAssociation=True, autoSetPositions=False,
                  configWiFiDirect=False, config4addr=False, noise_th=-91, cca_th=-90,
                  disable_tcp_checksum=False, ifb=False, client_isolation=False,
@@ -69,11 +68,8 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
            apsensor: default AP Sensor class/constructor
            modem: default Modem class/constructor
            link: default Link class/constructor
-           ieee80211w: enable ieee80211w
            ssid: wifi ssid
            mode: wifi mode
-           encrypt: wifi encrypt protocol
-           passwd: passphrase
            channel: wifi channel
            freq: wifi freq
            band: bandwidth channel
@@ -102,9 +98,6 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
         self.autoSetPositions = autoSetPositions
         self.ssid = ssid
         self.mode = mode
-        self.encrypt = encrypt
-        self.passwd = passwd
-        self.ieee80211w = ieee80211w
         self.channel = channel
         self.freq = freq
         self.band = band
@@ -158,7 +151,6 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
         self.n_groups = 1
         self.wlinks = []
         self.pointlist = []
-        self.initial_mediums = []
 
         if autoSetPositions and link == wmediumd:
             self.wmediumd_mode = interference
@@ -374,10 +366,7 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
                     'channel': self.channel,
                     'band': self.band,
                     'freq': self.freq,
-                    'mode': self.mode,
-                    'encrypt': self.encrypt,
-                    'passwd': self.passwd,
-                    'ieee80211w': self.ieee80211w
+                    'mode': self.mode
                    }
         defaults.update(params)
 
@@ -455,10 +444,7 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
                     'channel': self.channel,
                     'band': self.band,
                     'freq': self.freq,
-                    'mode': self.mode,
-                    'encrypt': self.encrypt,
-                    'passwd': self.passwd,
-                    'ieee80211w': self.ieee80211w
+                    'mode': self.mode
                     }
         if self.client_isolation:
             defaults['client_isolation'] = True
@@ -649,11 +635,11 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
                 link = cls(node1, node2, port1, port2, **params)
                 self.links.append(link)
                 return link
-
-            if self.do_association(node1.wintfs[0], node2.wintfs[0]):
-                link = cls(node1, node2, **params)
-                self.links.append(link)
-                return link
+            else:
+                if self.do_association(node1.wintfs[0], node2.wintfs[0]):
+                    link = cls(node1, node2, **params)
+                    self.links.append(link)
+                    return link
         elif ((node1 in self.stations and node2 in self.aps)
               or (node2 in self.stations and node1 in self.aps)) and cls != TCLink:
             if cls == wmediumd:
@@ -710,7 +696,7 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
         info('\n*** Configuring wifi nodes...\n')
         self.configureWifiNodes()
 
-        super(Mininet_wifi, self).buildFromTopo(topo)
+        super(Mininet_wifi, self).buildFromTopo(topo);
 
     def check_if_mob(self):
         if self.mob_model or self.mob_stop_time or self.roads:
@@ -1086,9 +1072,6 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
     def setPropagationModel(self, **kwargs):
         ppm.set_attr(self.noise_th, self.cca_th, **kwargs)
 
-    def setInitialMediums(self, mediums):
-        self.initial_mediums = mediums
-
     def configNodesStatus(self, src, dst, status):
         sta = self.nameToNode[dst]
         ap = self.nameToNode[src]
@@ -1246,7 +1229,7 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
 
     def get_mobility_params(self):
         "Set Mobility Parameters"
-        mob_params = {}
+        mob_params = dict()
         float_args = ['min_x', 'min_y', 'min_z',
                       'max_x', 'max_y', 'max_z',
                       'min_v', 'max_v', 'min_wt', 'max_wt']
@@ -1277,7 +1260,7 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
     def start_wmediumd(self):
         wmediumd(wlinks=self.wlinks, fading_cof=self.fading_cof,
                  noise_th=self.noise_th, stations=self.stations,
-                 aps=self.aps, cars=self.cars, ppm=ppm, mediums=self.initial_mediums)
+                 aps=self.aps, cars=self.cars, ppm=ppm)
 
     def init_wmediumd(self):
         self.start_wmediumd()
@@ -1401,7 +1384,7 @@ class Mininet_wifi(Mininet, Mininet_IoT, Mininet_WWAN):
     def restore_links(self):
         # restore link params when it is manually set
         for link in self.links:
-            params = {}
+            params = dict()
             if 'bw' in link.intf1.params:
                 params['bw'] = link.intf1.params['bw']
             if 'latency' in link.intf1.params:

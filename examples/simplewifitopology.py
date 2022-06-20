@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'This example creates a simple network topology with 1 AP and 2 stations'
 
@@ -14,7 +14,8 @@ def topology():
     net = Mininet_wifi()
 
     info("*** Creating nodes\n")
-    sta_arg, ap_arg = {}, {}
+    sta_arg = dict()
+    ap_arg = dict()
     if '-v' in sys.argv:
         sta_arg = {'nvif': 2}
     else:

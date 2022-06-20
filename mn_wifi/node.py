@@ -19,14 +19,15 @@ OVSAP: a AP using the Open vSwitch OpenFlow-compatible switch
     implementation (openvswitch.org).
 """
 
-
+from os import system as sh, getpid
 import re
 import math
-import matplotlib.pyplot as plt
 
 from time import sleep
-from sys import exit
-from os import system as sh, getpid
+
+import matplotlib
+
+import matplotlib.pyplot as plt
 
 from mininet.log import info, debug, error
 from mininet.util import (errRun, errFail, Python3, getincrementaldecoder,
@@ -179,11 +180,6 @@ class Node_wifi(Node):
         self.getNameToWintf(intf).setTxPower(txpower)
         self.update_graph()
 
-    def setMediumId(self, medium_id, intf=None):
-        """Set medium id to create isolated interface groups"""
-        self.getNameToWintf(intf).setMediumId(medium_id)
-
-
     def get_txpower(self, intf):
         connected = self.cmd('iw dev %s link | awk \'{print $1}\'' % intf)
         cmd = 'iw dev %s info | grep txpower | awk \'{print $2}\'' % intf
@@ -246,15 +242,9 @@ class Node_wifi(Node):
                 else:
                     self.lines[line].set_data([pos_[0][0], pos[0]], [pos_[1][0], pos[1]])
 
-    def getxyz(self): 
-        pos = self.position 
-        x,y = round(pos[0], 2), round(pos[1], 2)
-        #only access third element if it exists 
-        if len(pos) == 3:
-            z = round(pos[2], 2) 
-        #otherwise, set z to 0 
-        else: 
-            z = 0 
+    def getxyz(self):
+        pos = self.position
+        x, y, z = round(pos[0], 2), round(pos[1], 2), round(pos[2], 2)
         return x, y, z
 
     def update_3d(self):
@@ -509,16 +499,16 @@ class AP(Node_wifi):
             dpid = dpid.replace(':', '')
             assert len(dpid) <= self.dpidLen and int(dpid, 16) >= 0
             return '0' * (self.dpidLen - len(dpid)) + dpid
-
-        # Use hex of the first number in the switch name
-        nums = re.findall(r'\d+', self.name)
-        if nums:
-            dpid = hex(int(nums[ 0 ]))[ 2: ]
         else:
-            raise Exception('Unable to derive default datapath ID - '
-                            'please either specify a dpid or use a '
-                            'canonical ap name such as ap23.')
-        return '1' + '0' * (self.dpidLen -1 - len(dpid)) + dpid
+            # Use hex of the first number in the switch name
+            nums = re.findall(r'\d+', self.name)
+            if nums:
+                dpid = hex(int(nums[ 0 ]))[ 2: ]
+            else:
+                raise Exception('Unable to derive default datapath ID - '
+                                'please either specify a dpid or use a '
+                                'canonical ap name such as ap23.')
+            return '1' + '0' * (self.dpidLen -1 - len(dpid)) + dpid
 
 
 class UserAP(AP, UserSwitch):

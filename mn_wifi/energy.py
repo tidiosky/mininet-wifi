@@ -65,7 +65,8 @@ class Energy(object):
             return 'rx'
         elif self.get_tx_packet(intf):
             return 'tx'
-        return 'idle'
+        else:
+            return 'idle'
 
     def get_energy(self, intf, factor):
         return self.get_duration() * factor * intf.voltage

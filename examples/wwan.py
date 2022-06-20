@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """
 This example creates a simple wwan network topology
@@ -20,7 +20,7 @@ def topology():
     net = Mininet_wifi()
 
     info("*** Creating nodes\n")
-    net.addModem('m1')
+    m1 = net.addModem('m1')
 
     info("*** Configuring wifi nodes\n")
     net.configureWifiNodes()

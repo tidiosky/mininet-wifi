@@ -29,7 +29,8 @@ class LinuxBridge( AP ):
         "Are we forwarding yet?"
         if self.stp:
             return 'forwarding' in self.cmd( 'brctl showstp', self )
-        return True
+        else:
+            return True
 
     def start( self, _controllers ):
         "Start Linux bridge"

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'Example for Handover'
 
@@ -14,7 +14,7 @@ def topology(args):
     net = Mininet_wifi()
 
     info("*** Creating nodes\n")
-    sta1_args, sta2_args = {}, {}
+    sta1_args, sta2_args = dict(), dict()
     if '-s' in args:
         sta1_args['position'], sta2_args['position'] = '20,30,0', '60,30,0'
 

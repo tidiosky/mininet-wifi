@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 "Setting the position of Nodes with wmediumd to calculate the interference"
 

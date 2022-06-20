@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 'Setting the position of nodes and providing mobility'
 
@@ -39,7 +39,7 @@ def topology(args):
 
     net.startMobility(time=0, mob_rep=1, reverse=False)
 
-    p1, p2, p3, p4 = {}, {}, {}, {}
+    p1, p2, p3, p4 = dict(), dict(), dict(), dict()
     if '-c' not in args:
         p1 = {'position': '40.0,30.0,0.0'}
         p2 = {'position': '40.0,40.0,0.0'}
